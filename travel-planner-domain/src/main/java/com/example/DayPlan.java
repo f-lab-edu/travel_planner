@@ -17,7 +17,6 @@ public class DayPlan {
     public DayPlan(LocalDate date){
         this.date = date;
     }
-
     @Override
     public String toString() {
         return "DayPlan{" +

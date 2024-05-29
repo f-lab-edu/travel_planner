@@ -45,6 +45,7 @@ public class PlanController {
         TravelPlan travelPlan = plans.get(id);
         return new ResponseEntity<>(travelPlan, HttpStatus.OK);
     }
+  
     private List<DayPlan> generateDayPlans(LocalDate startDate, LocalDate endDate) {
         List<DayPlan> dayPlans = new CopyOnWriteArrayList<>();
         LocalDate currentDate = startDate;
@@ -60,6 +61,4 @@ public class PlanController {
         dayPlanId.set(1);
         return dayPlans;
     }
-
-
 }
