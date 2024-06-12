@@ -1,7 +1,7 @@
 package com.example.controller;
 
-import com.example.PlanService;
-import com.example.TravelPlan;
+import com.example.service.PlanService;
+import com.example.domain.TravelPlan;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +28,8 @@ public class PlanController {
     @GetMapping
     public ResponseEntity<List<TravelPlan>> getAllPlans(){
 
-        Map<Long, TravelPlan> plans = planService.getAllPlans();
-        return new ResponseEntity<>(new ArrayList<>(plans.values()), HttpStatus.OK);
+        List<TravelPlan> plans = planService.getAllPlans();
+        return new ResponseEntity<>(new ArrayList<>(plans), HttpStatus.OK);
     }
 
     @GetMapping("/{id}")

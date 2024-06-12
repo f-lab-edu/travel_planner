@@ -1,8 +1,8 @@
 package com.example.controller;
 
-import com.example.DayPlan;
-import com.example.Location;
-import com.example.TravelPlan;
+import com.example.domain.DayPlan;
+import com.example.domain.Location;
+import com.example.domain.TravelPlan;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,9 +14,9 @@ import org.springframework.http.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
-
+import org.springframework.test.annotation.DirtiesContext;
 import static org.assertj.core.api.Assertions.assertThat;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class PlanControllerTest {
 
@@ -62,6 +62,7 @@ class PlanControllerTest {
     }
 
     @Test
+    @DirtiesContext
     @DisplayName("일정 생성 테스트")
     public void testCreatePlan() throws Exception{
 
@@ -75,6 +76,7 @@ class PlanControllerTest {
     }
 
     @Test
+    @DirtiesContext
     @DisplayName("Id 값으로 일정 조회")
     public void testGetPlanById() throws Exception {
         ResponseEntity<TravelPlan> response1 = testRestTemplate.postForEntity("/plans", firstPlan, TravelPlan.class);
@@ -95,32 +97,38 @@ class PlanControllerTest {
     }
 
     @Test
+    @DirtiesContext
     @DisplayName("여행 장소 추가")
     public void postLocation() throws Exception {
         ResponseEntity<TravelPlan> response = testRestTemplate.postForEntity("/plans", firstPlan, TravelPlan.class);
-        DayPlan dayPlan = response.getBody().getDayPlanList().get(LocalDate.of(2024, 6,1));
-        assertThat(dayPlan.getLocationList()).hasSize(0);
+        Long planId = response.getBody().getId();
+        List<DayPlan> dayPlans = response.getBody().getDayPlanList();
+        assertThat(dayPlans).isNotNull();
+        assertThat(dayPlans).hasSize(3);
 
-        ResponseEntity<String> response1 = testRestTemplate.postForEntity("/plans/{id}/days/{date}/locations", firstPlace, String.class, 1, "2024-06-01");
-        ResponseEntity<String> response2 = testRestTemplate.postForEntity("/plans/{id}/days/{date}/locations", secondPlace, String.class, 1, "2024-06-01");
+        ResponseEntity<String> response1 = testRestTemplate.postForEntity("/{dayPlanId}/location", firstPlace, String.class, 1, "2024-06-01");
+        ResponseEntity<String> response2 = testRestTemplate.postForEntity("/{dayPlanId}/location", secondPlace, String.class, 1, "2024-06-01");
         assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
-        List<Location> locations = objectMapper.readValue(response2.getBody(), List.class);
+        List locations = objectMapper.readValue(response2.getBody(), List.class);
         assertThat(locations).hasSize(2);
     }
 
     @Test
+    @DirtiesContext
     @DisplayName("여행 일자에 해당하는 장소 반환")
     public void getLocationByDate() throws Exception{
         ResponseEntity<TravelPlan> response = testRestTemplate.postForEntity("/plans", firstPlan, TravelPlan.class);
+        List<DayPlan> dayPlans = response.getBody().getDayPlanList();
+        Long dayId = dayPlans.get(0).getId();
 
-        ResponseEntity<String> response1 = testRestTemplate.postForEntity("/plans/{id}/days/{date}/locations", firstPlace, String.class, 1, "2024-06-02");
-        ResponseEntity<String> response2 = testRestTemplate.postForEntity("/plans/{id}/days/{date}/locations", secondPlace, String.class, 1, "2024-06-02");
-        ResponseEntity<String> response3 = testRestTemplate.postForEntity("/plans/{id}/days/{date}/locations", thirdPlace, String.class, 1, "2024-06-02");
+        testRestTemplate.postForEntity("/{dayPlanId}/location", firstPlace, Location[].class, dayId);
+        testRestTemplate.postForEntity("/{dayPlanId}/location", secondPlace, Location[].class, dayId);
+        testRestTemplate.postForEntity("/{dayPlanId}/location", thirdPlace, Location[].class, dayId);
 
-        ResponseEntity<String> getResponse = testRestTemplate.getForEntity("/plans/{id}/days/{date}", String.class, 1, "2024-06-02");
-        List<Location> locations = objectMapper.readValue(getResponse.getBody(), List.class);
+        ResponseEntity<DayPlan> getResponse = testRestTemplate.getForEntity("/days/{id}", DayPlan.class, dayId);
+        DayPlan dayPlan = getResponse.getBody();
 
-        assertThat(locations).hasSize(3);
+        assertThat(dayPlan.getLocationList()).hasSize(3);
     }
 }
